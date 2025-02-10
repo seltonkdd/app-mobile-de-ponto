@@ -1,6 +1,6 @@
 import flet as ft
 import re
-from db_table import create_table, save_data, validate_user, insert_user
+from db_table import create_table, save_data, validate_user, insert_user, is_not_empty
 from datetime import datetime
 from datatable import table_pontos, table_users, show_db, table_collumn
 from gps import update_location, get_location_image_backend, get_geolocator
@@ -146,6 +146,8 @@ def main(page: ft.Page):
         timefield.current.visible = False
         table_pontos.rows.clear()
         save_data(str(time_picker.value), email_input.value)
+        if not is_not_empty():
+            clockin_con.content.content.controls[2].controls[1].visible = False
         page.update()
 
 
