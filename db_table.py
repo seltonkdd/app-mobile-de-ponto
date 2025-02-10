@@ -67,7 +67,20 @@ def validate_user(email, senha):
             return True
     return False
     
+def is_not_empty():
+    try:
+        conn = sqlite3.connect(os.path.join(db_directory, 'dbponto.db'), check_same_thread=False)
+        c = conn.cursor()
+        c.execute('SELECT * FROM users')
+        result = c.fetchall()
+        conn.close()
+    except sqlite3.Error as e:
+        print(f'erro no is_not_empty: {e}')
 
+    if len(result) > 0:
+        return True
+    else:
+        return False
    
         
     
