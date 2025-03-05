@@ -60,25 +60,5 @@ Para ocorrer a requisição na API do Google Maps, de modo que sua própria chav
 
 #### Feito isso, a aplicação estará rodando
 
-# Buildar para APK
-#### Qualquer alteração posterior no código, será necessário buildar o apk novamente usando o Flet
-
-
->> ## Pré-requisitos
-
-- [Flutter](https://docs.flutter.dev/get-started/install)
-- [Android Studio](https://developer.android.com/studio?)
-- Android SDK (Instalar dentro do Android Studio)
-- [Git](https://git-scm.com/downloads)
-
-> Passo a Passo
-
-Mude o `teste_server.py` para um diretório de sua preferencia fora do diretório raiz, pois o Flet não aceita Frameworks externos como dependências no APK, veja mais na [documentação](https://flet.dev/docs/publish). 
-
-No terminal, execute `flet build apk --include-packages flet_geolocator -vv` para começar o processo de contrução do APK.
-
-Na nova pasta `./build/apk` será armazenado o APK criado.
-
-
 
 ### Espero que tenha entendido com a documentação, sinta-se livre para melhoras!
