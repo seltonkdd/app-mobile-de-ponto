@@ -9,8 +9,8 @@ from gps import update_location, get_location_image_backend, get_geolocator
 
 def main(page: ft.Page):
     page.title = "App de Ponto"
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.vertical_alignment = 'center'
+    page.horizontal_alignment = 'center'
 
 #### CRIANDO TABELA DO BANCO DE DADOS
     create_table()
@@ -258,7 +258,7 @@ def main(page: ft.Page):
                             ft.TextButton("Localização", on_click=handle_get_current_position),
                             ft.TextButton("Ponto", on_click=lambda e: (reset_time_picker(), page.open(time_picker))),
                         ],
-                        alignment=ft.MainAxisAlignment.END,
+                        alignment=ft.MainAxisAlignment.END
                     ),
                     timefield.current,
                     ft.Container(content=table_collumn, alignment=ft.alignment.center)
