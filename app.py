@@ -1,10 +1,13 @@
 import flet as ft
-import requests
+import requests, re
 from gps import update_location, get_location_image_backend, get_geolocator
+from datatable import table_collumn, show_db
 from datetime import datetime
 
+current_user = None
+
 def main(page: ft.Page):
-    # page.vertical_alignment = 'center'
+    page.vertical_alignment = 'center'
     page.horizontal_alignment = 'center'
     page.window.height = 700
     page.window.width = 400
@@ -24,14 +27,19 @@ def main(page: ft.Page):
     senha_confirmada = ft.TextField(label="Confirme sua senha", password=True, 
                                     can_reveal_password=True)
 
-    current_user = None
-
     def show_snack_bar(message, color):
         #MOSTRAR BARRA DE AVISO
         snack_bar.content.value = message
         snack_bar.bgcolor = color
         snack_bar.open = True
         page.update()
+
+    def check_regex(input):
+        emailPattern = r'[\w]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,6}'
+        if re.search(emailPattern, input):
+            return True
+        else:
+            return False
 
     def clean_fields(e):
         #LIMPAR CAMPOS DE TEXTO
@@ -59,20 +67,30 @@ def main(page: ft.Page):
         _stack_main.controls.clear()
         _stack_main.update()
         _stack_main.controls.append(_main)
+        _stack_main.controls.append(_tableview)
         page.bottom_appbar = ft.BottomAppBar(
                             content=ft.Row([
-                            ft.IconButton(icon=ft.icons.LIST_ALT, scale=1.5),
-                            ft.IconButton(icon=ft.icons.LOCK_CLOCK, scale=1.5)
+                            ft.IconButton(icon=ft.icons.LIST_ALT, scale=1.5, on_click=toggle_tableview),
+                            ft.IconButton(icon=ft.icons.LOCK_CLOCK, scale=1.5, on_click=animate_main)
                             ], alignment=ft.MainAxisAlignment.CENTER, spacing=100), 
                             height=63)
         page.update()
-        _stack_main.update(e)
+        _stack_main.update()
+
+    def animate_main(e):
+        clean_fields(e)
+        _tableview.offset=ft.transform.Offset(-5,0)
+        _main.offset=ft.transform.Offset(0,0)
+        _stack_main.update()
+
 
     def toggle_tableview(e):
+        table_collumn.height = 500
         clean_fields(e)
-        _stack_main.controls.clear()
+        listar_pontos()
+        _tableview.offset=ft.transform.Offset(0,0)
+        _main.offset=ft.transform.Offset(2,0)
         _stack_main.update()
-        _stack_main.controls.append(_tableview)
 
 
     def hide_timefield():
@@ -109,6 +127,7 @@ def main(page: ft.Page):
         result = resposta.json()
         if resposta.status_code == 200:
             current_user = result['user']
+            #print(current_user)
             toggle_main(e)
             handle_get_current_position(e)
         else:
@@ -116,6 +135,12 @@ def main(page: ft.Page):
             return
 
     def cadastrar_usuario(e):
+        # if not check_regex(email.value):
+        #     show_snack_bar('Insira um email válido.', 'red')
+        #     return
+        # if not len(senha.value) >= 8:
+        #     show_snack_bar('A senha deve pelo menos conter 8 caracteres.', 'red')
+        #     return
         if senha.value != senha_confirmada.value:
             show_snack_bar('As senhas divergem', 'red')
             return
@@ -130,16 +155,27 @@ def main(page: ft.Page):
         page.update()
 
     def registrar_ponto():
+        global current_user
         current_date = datetime.now().date()
         datetime_str = f'{current_date} {time_text.value}'
-        data = {"email": "a", "ponto": datetime_str}
+        data = {"email": current_user, "ponto": datetime_str}
         resposta = requests.post("http://127.0.0.1:5000/api/pontos", json=data)
         result = resposta.json()
         if resposta.status_code == 201:
             show_snack_bar(result['mensagem'], 'green')
         else:
             show_snack_bar(result['erro'], 'red')
-       
+
+    def listar_pontos():
+        global current_user
+        data = {"user_email": current_user}
+        resposta = requests.post('http://127.0.0.1:5000/api/users/pontos', json=data)
+        result = resposta.json()
+        if resposta.status_code == 200:
+            show_db(result['Pontos'])
+        else:
+            show_snack_bar(result['erro', 'red'])
+
 
     time_picker = ft.TimePicker(
         confirm_text="Confirm",
@@ -184,9 +220,15 @@ def main(page: ft.Page):
         ),
         padding=10)
     
-    _main = ft.Container(content=ft.Column(
+    _main = ft.Container(
+                        height=page.height,
+                        expand=True,
+                        offset=ft.transform.Offset(0,0),
+                        animate_offset=ft.animation.Animation(400,curve='easyIn'),
+                        content=ft.Column(
         [   
-            ft.IconButton(icon=ft.icons.ARROW_BACK, alignment=ft.alignment.top_left, padding=0),
+            ft.IconButton(icon=ft.icons.ARROW_BACK, alignment=ft.alignment.top_left, padding=0, 
+                          on_click=toggle_login),
             ft.Text('Bata seu ponto', size=30, weight=10),
             ft.Card(width=page.width,
                     elevation=20,
@@ -203,7 +245,16 @@ def main(page: ft.Page):
         ]
     ), alignment=ft.alignment.center)
 
-    _tableview = []
+    _tableview = ft.Container(
+        top=0,
+        offset=ft.transform.Offset(-5,0),
+        animate_offset=ft.animation.Animation(400,curve='easyIn'),
+        content=ft.Column([
+                    ft.IconButton(icon=ft.icons.ARROW_BACK, alignment=ft.alignment.top_left, padding=0, 
+                          on_click=toggle_login),
+                    table_collumn
+                          ])
+    )
 
     timefield.current.visible = False
     _stack_main = ft.Stack(controls=[_login], alignment=ft.alignment.center)
