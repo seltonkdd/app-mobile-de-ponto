@@ -4,7 +4,9 @@ from gps import update_location, get_location_image_backend, get_geolocator
 from datatable import table_collumn, show_db
 from datetime import datetime
 
-current_user = None
+TOKEN = None
+session = requests.Session()
+
 
 def main(page: ft.Page):
     page.vertical_alignment = 'center'
@@ -64,10 +66,13 @@ def main(page: ft.Page):
 
     def toggle_main(e):
         clean_fields(e)
+        listar_pontos()
         _stack_main.controls.clear()
         _stack_main.update()
         _stack_main.controls.append(_main)
         _stack_main.controls.append(_tableview)
+        _tableview.offset=ft.Offset(-5,0)
+        _main.offset=ft.Offset(0,0)
         page.bottom_appbar = ft.BottomAppBar(
                             content=ft.Row([
                             ft.IconButton(icon=ft.icons.LIST_ALT, scale=1.5, on_click=toggle_tableview),
@@ -83,7 +88,6 @@ def main(page: ft.Page):
         _main.offset=ft.transform.Offset(0,0)
         _stack_main.update()
 
-
     def toggle_tableview(e):
         table_collumn.height = 500
         clean_fields(e)
@@ -91,7 +95,6 @@ def main(page: ft.Page):
         _tableview.offset=ft.transform.Offset(0,0)
         _main.offset=ft.transform.Offset(2,0)
         _stack_main.update()
-
 
     def hide_timefield():
         timefield.current.visible = False
@@ -118,7 +121,7 @@ def main(page: ft.Page):
             show_snack_bar(error, 'red')
 
     def login_usuario(e):
-        global current_user
+        global TOKEN
         if not email.value or not senha.value:
             show_snack_bar("O campo email e senha são obrigatórios.", 'red')
             return
@@ -126,8 +129,8 @@ def main(page: ft.Page):
         resposta = requests.post("http://127.0.0.1:5000/api/auth/login", json=data)
         result = resposta.json()
         if resposta.status_code == 200:
-            current_user = result['user']
-            #print(current_user)
+            TOKEN = result['token']
+
             toggle_main(e)
             handle_get_current_position(e)
         else:
@@ -155,11 +158,15 @@ def main(page: ft.Page):
         page.update()
 
     def registrar_ponto():
-        global current_user
+        global TOKEN
+
+        session.headers.update({"Authorization": f"Bearer {TOKEN}"})
+
         current_date = datetime.now().date()
         datetime_str = f'{current_date} {time_text.value}'
-        data = {"email": current_user, "ponto": datetime_str}
-        resposta = requests.post("http://127.0.0.1:5000/api/pontos", json=data)
+        data = {"ponto": datetime_str}
+
+        resposta = session.post("http://127.0.0.1:5000/api/pontos", json=data)
         result = resposta.json()
         if resposta.status_code == 201:
             show_snack_bar(result['mensagem'], 'green')
@@ -167,9 +174,11 @@ def main(page: ft.Page):
             show_snack_bar(result['erro'], 'red')
 
     def listar_pontos():
-        global current_user
-        data = {"user_email": current_user}
-        resposta = requests.post('http://127.0.0.1:5000/api/users/pontos', json=data)
+        global TOKEN
+
+        session.headers.update({"Authorization": f"Bearer {TOKEN}"})
+
+        resposta = session.get('http://127.0.0.1:5000/api/users/pontos')
         result = resposta.json()
         if resposta.status_code == 200:
             show_db(result['Pontos'])
