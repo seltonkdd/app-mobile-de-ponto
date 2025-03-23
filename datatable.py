@@ -20,4 +20,7 @@ def show_db(pontos):
     keys_pontos = ['id', 'ponto', 'user_email']
     populate_table(table_pontos, keys_pontos, pontos)
 
-table_collumn = ft.Column([ft.Row([table_pontos], scroll='always')], scroll='auto')
+table_column = ft.Column(
+    [
+        ft.Row([table_pontos], scroll='always')
+    ], scroll=ft.ScrollMode.ALWAYS, alignment=ft.alignment.center)
