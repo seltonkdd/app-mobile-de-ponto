@@ -39,6 +39,7 @@ def main(page: ft.Page):
 
     img = ft.Image(IMAGE_PATH, scale=0.899)
 
+    # Funções auxiliares
     def view_pop(view):
         if len(page.views) > 1:
             page.views.pop()
@@ -125,11 +126,10 @@ def main(page: ft.Page):
 
             p = gl.get_current_position()
             update_location(p.latitude, p.longitude)
+            get_location_image_backend() 
         except:
             page.open(app_settings_dlg)
             _main.update()
-        finally:
-            get_location_image_backend() 
 
     async def handle_open_app_settings(e):
         #ABRIR AS CONFIGURAÇÕES DE LOCALIZAÇÃO
@@ -137,44 +137,37 @@ def main(page: ft.Page):
         page.close(app_settings_dlg)
 
     app_settings_dlg = settings_dlg(handle_open_app_settings)
-
+    
+    # Requisições para servidor
     def login_usuario(e):
-        global token
         if not email.value or not senha.value:
             show_snack_bar("O campo email e senha são obrigatórios.", 'red')
             return
-        data = {"email": email.value, "senha": senha.value}
-        resposta = requests.post("http://127.0.0.1:5000/api/auth/login", json=data)
+        resposta = requests.post("http://127.0.0.1:5000/api/auth/login", json={"email": email.value, "senha": senha.value})
         result = resposta.json()
         if resposta.status_code == 200:
+            global token
             token = result['token']
-
             toggle_main(e)
             handle_get_current_position(e)
         else:
             show_snack_bar(result['erro'], 'red')
-            return
 
     def cadastrar_usuario(e):
         if not check_regex(email.value):
-            show_snack_bar('Insira um email válido.', 'red')
-            return
-        if not len(senha.value) >= 8:
-            show_snack_bar('A senha deve pelo menos conter 8 caracteres.', 'red')
-            return
-        if senha.value != senha_confirmada.value:
-            show_snack_bar('As senhas divergem', 'red')
-            return
-        data = {"nome": nome.value, "email": email.value, "senha": senha.value}
-        resposta = requests.post("http://127.0.0.1:5000/api/auth/register", json=data)
-        result = resposta.json()
-        if resposta.status_code == 201:
-            show_snack_bar(result['mensagem'], 'green')
-            toggle_login(e)
+            show_snack_bar("Insira um email válido.", "red")
+        elif len(senha.value) < 8:
+            show_snack_bar("A senha deve conter pelo menos 8 caracteres.", "red")
+        elif senha.value != senha_confirmada.value:
+            show_snack_bar("As senhas divergem", "red")
         else:
-            show_snack_bar(result['erro'], 'red')
-            return
-        page.update()
+            resposta = requests.post("http://127.0.0.1:5000/api/auth/register", json={"nome": nome.value, "email": email.value, "senha": senha.value})
+            result = resposta.json()
+            if resposta.status_code == 201:
+                show_snack_bar(result['mensagem'], "green")
+                toggle_login(e)
+            else:
+                show_snack_bar(result['erro'], "red")
 
     def registrar_ponto():
         global token
@@ -236,7 +229,6 @@ def main(page: ft.Page):
                 ft.ElevatedButton("Entrar", width=100, on_click=login_usuario),
                 ft.TextButton('Cadastre-se!', on_click=toggle_sign_up)
             ],
-            alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER
         ),
         padding=10
@@ -256,7 +248,6 @@ def main(page: ft.Page):
                 ft.ElevatedButton('Cadastre-se!', on_click=cadastrar_usuario),
                 ft.TextButton('Voltar para o login', on_click=toggle_login)
             ],
-            alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER
         ),
         padding=10
@@ -283,16 +274,11 @@ def main(page: ft.Page):
                                 [
                                     ft.TextButton("Localização", on_click=handle_get_current_position), 
                                     ft.TextButton("Ponto", on_click=lambda e: (reset_time_picker(), page.open(time_picker)))
-                                ], alignment=ft.MainAxisAlignment.END
-                                )
+                                ], alignment=ft.MainAxisAlignment.END)
                         ], 
-                        horizontal_alignment='center'
-                    )
-                ), 
+                        horizontal_alignment='center')), 
                 timefield.current
-            ]
-        ), alignment=ft.alignment.center
-    )
+            ]), alignment=ft.alignment.center)
 
     # container da tabela
     _tableview = ft.Container(
@@ -337,11 +323,7 @@ def main(page: ft.Page):
     )
 
     def route_change(event: ft.RouteChangeEvent):
-        routes = {
-            '/': ft.View(
-                '/',
-                [
-                    ft.AppBar(
+        appbar = ft.AppBar(
                         title=ft.Text('MasterPoint', size=25),
                         center_title=True,
                         bgcolor=ft.colors.SURFACE_VARIANT,
@@ -350,34 +332,21 @@ def main(page: ft.Page):
                                 ft.PopupMenuItem(icon=ft.icons.INFO,
                                                 text='Sobre',
                                                 on_click=lambda _: page.go('/about'))
-                                                ])
-                        ], automatically_imply_leading=False
-                    ), _stack_main, time_picker, bottom_appbar
-                ], vertical_alignment='center', horizontal_alignment='center'
-            ),
+                                                ])])
+        
+        routes = {
+            '/': ft.View(
+                '/', [appbar, _stack_main, time_picker, bottom_appbar], 
+                vertical_alignment='center', horizontal_alignment='center'),
             '/about': ft.View(
-                    '/about',
-                    [
-                        ft.AppBar(
-                            title=ft.Text('MasterPoint', size=25),
-                            center_title=True,
-                            bgcolor=ft.colors.SURFACE_VARIANT,
-                            actions=[
-                                ft.PopupMenuButton(items=[
-                                    ft.PopupMenuItem(icon=ft.icons.INFO,
-                                                    text='Sobre',
-                                                    on_click=lambda _: page.go('/about'))
-                                ])
-                            ]
-                        ),
-                        _about
-                    ], vertical_alignment='center', horizontal_alignment='center'
-                )
-        }
+                    '/about', [appbar, _about], vertical_alignment='center', horizontal_alignment='center')
+            }
+        
         route = event.route
         if not any(view.route == page.route for view in page.views):
             if page.route in routes:
                 page.views.append(routes[route])
+            appbar.automatically_imply_leading = False if len(page.views) < 3 else True
         page.update()
     
     timefield.current.visible = False
