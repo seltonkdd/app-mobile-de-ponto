@@ -16,7 +16,7 @@ def update_location(lat, lon):
     
 #### FAZER A REQUISIÇÃO PRO SERVIDOR/LOCALHOST E CONSEGUIR A IMAGEM GPS ARMAZENADA NELE
 def get_location_image_backend(e):
-    url = f'http://SEU.IP.SEU.IP/get_map_image?latitude={latitude}&longitude={longitude}&zoom=15&size=600x400&markers=color:red|label:S|{latitude},{longitude}&maptype=roadmap'
+    url = f'http://127.0.0.1/get_map_image?latitude={latitude}&longitude={longitude}&zoom=15&size=600x400&markers=color:red|label:S|{latitude},{longitude}&maptype=roadmap'
     response = requests.get(url)
 
     with open("assets/imagem_gps.png", "wb") as file:
