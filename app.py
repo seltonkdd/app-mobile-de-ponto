@@ -13,26 +13,22 @@ IMAGE_PATH = 'assets/imagem_gps.png'
 
 
 def main(page: ft.Page):
-    page.vertical_alignment = 'center'
-    page.horizontal_alignment = 'center'
-    page.window.width = 400
-    page.window.height = 800
+   # Configuração inicial da página
+    page.window.width, page.window.height = 400, 800
+    page.vertical_alignment = page.horizontal_alignment = "center"
     page.expand = True
-
-    snack_bar = ft.SnackBar(ft.Text())
-    page.overlay.append(snack_bar)
+    page.overlay.append(ft.SnackBar(ft.Text()))
 
     gl = get_geolocator()
     page.overlay.append(gl)
 
     timefield = ft.Ref[ft.Row]()
 
-    nome = ft.TextField(label="Nome")
-    email = ft.TextField(label="Email")
-    senha = ft.TextField(label="Senha", password=True, can_reveal_password=True)
+    nome, email, senha, senha_confirmada = [ft.TextField(label=lbl) for lbl in ("Nome", "Email", "Senha", "Confirme sua senha")]
+    senha.password = senha_confirmada.password = True
+    senha.can_reveal_password = senha_confirmada.can_reveal_password = True
 
-    senha_confirmada = ft.TextField(label="Confirme sua senha", password=True, 
-                                    can_reveal_password=True)
+    snack_bar = page.overlay[0]
     
     settings_dlg = lambda e: ft.AlertDialog(
         adaptive=True,
@@ -43,27 +39,22 @@ def main(page: ft.Page):
 
     img = ft.Image(IMAGE_PATH, scale=0.899)
 
+    def view_pop(view):
+        if len(page.views) > 1:
+            page.views.pop()
+            page.go(page.views[-1].route)
+            page.update()
+
     def show_snack_bar(message, color):
-        #MOSTRAR BARRA DE AVISO
-        snack_bar.content.value = message
-        snack_bar.bgcolor = color
-        snack_bar.open = True
+        snack_bar.content.value, snack_bar.bgcolor, snack_bar.open = message, color, True
         page.update()
 
     def check_regex(input):
-        # VALIDAR SE EMAIL CONDIZ COM OS PADRÕES
-        emailPattern = r'[\w]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,6}'
-        if re.search(emailPattern, input):
-            return True
-        else:
-            return False
+        return re.search(r'\w+@[a-zA-Z0-9]+\.[a-zA-Z]{2,6}', input) is not None
 
     def clean_fields(e):
-        #LIMPAR CAMPOS DE TEXTO
-        nome.value = ''
-        email.value = ''
-        senha.value = ''
-        senha_confirmada.value = ''
+        for field in [nome, email, senha, senha_confirmada]:
+            field.value = ""
 
     def toggle_sign_up(e):
         # MOSTRAR TELA DE CADASTRO
@@ -80,7 +71,7 @@ def main(page: ft.Page):
         _stack_main.update()
         _stack_main.controls.append(_login)
         _stack_main.update()
-        page.remove(bottom_appbar)
+        bottom_appbar.visible = False
         page.update()
 
     def toggle_main(e):
@@ -93,7 +84,7 @@ def main(page: ft.Page):
         _stack_main.controls.append(_tableview)
         _tableview.offset=ft.Offset(-5,0)
         _main.offset=ft.Offset(0,0)
-        page.add(bottom_appbar)
+        bottom_appbar.visible = True
         page.update()
         _stack_main.update()
 
@@ -110,13 +101,6 @@ def main(page: ft.Page):
         listar_pontos()
         _tableview.offset=ft.transform.Offset(0,0)
         _main.offset=ft.transform.Offset(2,0)
-        _stack_main.update()
-
-    def toggle_about(e):
-        clean_fields(e)
-        _stack_main.controls.clear()
-        _stack_main.update()
-        _stack_main.controls.append(_about)
         _stack_main.update()
 
     def hide_timefield():
@@ -160,7 +144,7 @@ def main(page: ft.Page):
             show_snack_bar("O campo email e senha são obrigatórios.", 'red')
             return
         data = {"email": email.value, "senha": senha.value}
-        resposta = requests.post("https://seltonkdd.pythonanywhere.com/api/auth/login", json=data)
+        resposta = requests.post("http://127.0.0.1:5000/api/auth/login", json=data)
         result = resposta.json()
         if resposta.status_code == 200:
             token = result['token']
@@ -182,7 +166,7 @@ def main(page: ft.Page):
             show_snack_bar('As senhas divergem', 'red')
             return
         data = {"nome": nome.value, "email": email.value, "senha": senha.value}
-        resposta = requests.post("https://seltonkdd.pythonanywhere.com/api/auth/register", json=data)
+        resposta = requests.post("http://127.0.0.1:5000/api/auth/register", json=data)
         result = resposta.json()
         if resposta.status_code == 201:
             show_snack_bar(result['mensagem'], 'green')
@@ -201,7 +185,7 @@ def main(page: ft.Page):
         datetime_str = f'{current_date} {time_text.value}'
         data = {"ponto": datetime_str}
 
-        resposta = session.post("https://seltonkdd.pythonanywhere.com/api/pontos", json=data)
+        resposta = session.post("http://127.0.0.1:5000/api/pontos", json=data)
         result = resposta.json()
         if resposta.status_code == 201:
             show_snack_bar(result['mensagem'], 'green')
@@ -213,35 +197,20 @@ def main(page: ft.Page):
 
         session.headers.update({"Authorization": f"Bearer {token}"})
 
-        resposta = session.get('https://seltonkdd.pythonanywhere.com/api/users/pontos')
+        resposta = session.get('http://127.0.0.1:5000/api/users/pontos')
         result = resposta.json()
         if resposta.status_code == 200:
             show_db(result['Pontos'])
         else:
-            show_snack_bar(result['erro', 'red'])
+            show_snack_bar(result['erro'], 'red')
 
-
-    appbar = ft.AppBar(
-        leading=ft.Image('leading.png', color='grey'),
-        leading_width=45,
-        title=ft.Text('MasterPoint', size=25),
-        center_title=True,
-        bgcolor=ft.colors.SURFACE_VARIANT,
-        actions=[
-            ft.PopupMenuButton(items=[
-                ft.PopupMenuItem(icon=ft.icons.INFO,
-                                 text='Sobre',
-                                 on_click=toggle_about)
-            ])
-        ]
-    )
 
     bottom_appbar = ft.BottomAppBar(
         content=ft.Row([
         ft.IconButton(icon=ft.icons.LIST_ALT, scale=1.5, on_click=toggle_tableview),
         ft.IconButton(icon=ft.icons.LOCK_CLOCK, scale=1.5, on_click=animate_main)
         ], alignment=ft.MainAxisAlignment.CENTER, spacing=100), 
-        height=63
+        height=63,
     )
 
     time_picker = ft.TimePicker(
@@ -334,8 +303,8 @@ def main(page: ft.Page):
         animate_offset=ft.animation.Animation(400,curve='easyIn'),
         content=ft.Column(
             [
-                    ft.IconButton(icon=ft.icons.ARROW_BACK, alignment=ft.alignment.top_left, padding=0, on_click=toggle_login),
-                    ft.Container(content=table_column, alignment=ft.alignment.center, margin=0, height=500)     
+                ft.IconButton(icon=ft.icons.ARROW_BACK, alignment=ft.alignment.top_left, padding=0, on_click=toggle_login),
+                ft.Container(content=table_column, alignment=ft.alignment.center, margin=0, height=500)     
             ], 
             expand=True, 
             alignment=ft.alignment.center
@@ -347,8 +316,7 @@ def main(page: ft.Page):
         expand=True,
         alignment=ft.alignment.center,
         content=ft.Column(
-            [
-                ft.IconButton(icon=ft.icons.ARROW_BACK, alignment=ft.alignment.top_left, padding=0, on_click=toggle_login),
+            [   
                 ft.Container(
                     margin=0,
                     expand=True,
@@ -367,8 +335,56 @@ def main(page: ft.Page):
             ]
         )
     )
+
+    def route_change(event: ft.RouteChangeEvent):
+        routes = {
+            '/': ft.View(
+                '/',
+                [
+                    ft.AppBar(
+                        title=ft.Text('MasterPoint', size=25),
+                        center_title=True,
+                        bgcolor=ft.colors.SURFACE_VARIANT,
+                        actions=[
+                            ft.PopupMenuButton(items=[
+                                ft.PopupMenuItem(icon=ft.icons.INFO,
+                                                text='Sobre',
+                                                on_click=lambda _: page.go('/about'))
+                                                ])
+                        ], automatically_imply_leading=False
+                    ), _stack_main, time_picker, bottom_appbar
+                ], vertical_alignment='center', horizontal_alignment='center'
+            ),
+            '/about': ft.View(
+                    '/about',
+                    [
+                        ft.AppBar(
+                            title=ft.Text('MasterPoint', size=25),
+                            center_title=True,
+                            bgcolor=ft.colors.SURFACE_VARIANT,
+                            actions=[
+                                ft.PopupMenuButton(items=[
+                                    ft.PopupMenuItem(icon=ft.icons.INFO,
+                                                    text='Sobre',
+                                                    on_click=lambda _: page.go('/about'))
+                                ])
+                            ]
+                        ),
+                        _about
+                    ], vertical_alignment='center', horizontal_alignment='center'
+                )
+        }
+        route = event.route
+        if not any(view.route == page.route for view in page.views):
+            if page.route in routes:
+                page.views.append(routes[route])
+        page.update()
     
     timefield.current.visible = False
-    page.add(appbar, _stack_main, time_picker)
+    page.on_view_pop = view_pop
+    page.on_route_change = route_change
+    page.go('/')
+    bottom_appbar.visible = False
+    page.update()
 
 ft.app(target=main)
