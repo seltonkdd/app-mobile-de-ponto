@@ -143,7 +143,7 @@ def main(page: ft.Page):
         if not email.value or not senha.value:
             show_snack_bar("O campo email e senha são obrigatórios.", 'red')
             return
-        resposta = requests.post("http://127.0.0.1:5000/api/auth/login", json={"email": email.value, "senha": senha.value})
+        resposta = requests.post("https://seltonkdd.pythonanywhere.com/api/auth/login", json={"email": email.value, "senha": senha.value})
         result = resposta.json()
         if resposta.status_code == 200:
             global token
@@ -161,7 +161,7 @@ def main(page: ft.Page):
         elif senha.value != senha_confirmada.value:
             show_snack_bar("As senhas divergem", "red")
         else:
-            resposta = requests.post("http://127.0.0.1:5000/api/auth/register", json={"nome": nome.value, "email": email.value, "senha": senha.value})
+            resposta = requests.post("https://seltonkdd.pythonanywhere.com/api/auth/register", json={"nome": nome.value, "email": email.value, "senha": senha.value})
             result = resposta.json()
             if resposta.status_code == 201:
                 show_snack_bar(result['mensagem'], "green")
@@ -178,7 +178,7 @@ def main(page: ft.Page):
         datetime_str = f'{current_date} {time_text.value}'
         data = {"ponto": datetime_str}
 
-        resposta = session.post("http://127.0.0.1:5000/api/pontos", json=data)
+        resposta = session.post("https://seltonkdd.pythonanywhere.com/api/pontos", json=data)
         result = resposta.json()
         if resposta.status_code == 201:
             show_snack_bar(result['mensagem'], 'green')
@@ -190,7 +190,7 @@ def main(page: ft.Page):
 
         session.headers.update({"Authorization": f"Bearer {token}"})
 
-        resposta = session.get('http://127.0.0.1:5000/api/users/pontos')
+        resposta = session.get('https://seltonkdd.pythonanywhere.com/api/users/pontos')
         result = resposta.json()
         if resposta.status_code == 200:
             show_db(result['Pontos'])
