@@ -1,4 +1,4 @@
-# App mobile de ponto (ANDAMENTO)
+# App mobile de ponto
 Aplicativo mobile de bater ponto, desenvolvido inteiramente em Python, utilizando Framework Flet para interface interativa com integração de API do Google Maps, CRUD usando SQlite3 e lidando com requisições via servidor usando Flask.
 
 # Versão 0.9.5
