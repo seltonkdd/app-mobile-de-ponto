@@ -1,11 +1,12 @@
 [project]
-name = "com.MasterPoint"
+name = "MasterPoint"
 version = "1.0.0"
-dependencies = ["flet>=0.24.1", "requests"]
+dependencies = ["flet==0.27.6", "flet-geolocator", "requests"]
+
+[tool.flet]
+compile.cleanup = true
+permissions = ["location"]
 
 [tool.flet.android]
-permissions = [
-    "android.permission.INTERNET",
-    "android.permission.READ_EXTERNAL_STORAGE",
-    "android.permission.WRITE_EXTERNAL_STORAGE"
-]
+min_sdk_version = 21
+target_sdk_version = 34

@@ -1,6 +1,6 @@
 import flet as ft
 import requests, re, os
-from gps import update_location, get_location_image_backend, get_geolocator
+from gps import get_location_image_backend, get_geolocator
 from datatable import table_column, show_db
 from datetime import datetime
 
@@ -32,7 +32,7 @@ def main(page: ft.Page):
     
     settings_dlg = lambda e: ft.AlertDialog(
         adaptive=True,
-        content=ft.Text('O app precisa de sua permissão de localização. Ative-a nas configurações.'),
+        content=ft.Text('O app não obteve sua localização. Permita o app ter sua localização atual nas configurações.'),
         actions=[ft.TextButton(text="Abrir configurações", on_click=e)],
         actions_alignment=ft.MainAxisAlignment.CENTER,
     )
@@ -114,22 +114,22 @@ def main(page: ft.Page):
         page.update()
 
     def reset_time_picker():
-        current_time = datetime.now() 
-        time_picker.value = str(current_time.hour) + ':' + str(current_time.minute)
+        time_picker.value = datetime.now()
         time_picker.update() 
 
     def handle_get_current_position(e):
         #OBTER LOCALIZAÇÃO DO USUARIO E ARMAZENAR NA IMAGEM
+        p = None
+        if os.path.exists(IMAGE_PATH):
+            os.remove(IMAGE_PATH)
         try:
-            if os.path.exists(IMAGE_PATH):
-                os.remove(IMAGE_PATH)
-
             p = gl.get_current_position()
-            update_location(p.latitude, p.longitude)
-            get_location_image_backend() 
         except:
             page.open(app_settings_dlg)
             _main.update()
+        finally:
+            if p:
+                get_location_image_backend(p.latitude, p.longitude)
 
     async def handle_open_app_settings(e):
         #ABRIR AS CONFIGURAÇÕES DE LOCALIZAÇÃO
@@ -234,8 +234,6 @@ def main(page: ft.Page):
         padding=10
     )
     
-    _stack_main = ft.Stack(controls=[_login], alignment=ft.alignment.center)
-    
     # container de cadastro
     _signup = ft.Container(
         content=ft.Column(
@@ -321,6 +319,8 @@ def main(page: ft.Page):
             ]
         )
     )
+
+    _stack_main = ft.Stack(controls=[_login], alignment=ft.alignment.center)
 
     def route_change(event: ft.RouteChangeEvent):
         appbar = ft.AppBar(
